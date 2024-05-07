@@ -11,8 +11,13 @@ export default function Home() {
 
   const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    if (!name.trim()) {
+      setError('Please enter a name.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const [ageResponse, genderResponse, nationalResponse] = await Promise.all([
@@ -20,6 +25,11 @@ export default function Home() {
         fetch(`https://api.genderize.io?name=${name}`).then((response) => response.json()),
         fetch(`https://api.nationalize.io?name=${name}`).then((response) => response.json()),
       ]);
+
+      if (ageResponse.error || genderResponse.error || nationalResponse.error) {
+        setError('Error fetching data. Please try again later.');
+        return;
+      }
 
       setAge(ageResponse?.age || 'Not found');
       setGender(genderResponse?.gender || 'Not found');
@@ -62,7 +72,7 @@ export default function Home() {
           </button>
         </form>
         {error && <p className="text-red-500 text-center">{error}</p>}
-        {age && (
+        {age && !error && (
           <div className="bg-gray-100 p-4 rounded-b-md">
             <p className="mb-2">Age: {age}</p>
             <p className="mb-2">Gender: {gender}</p>
@@ -73,3 +83,4 @@ export default function Home() {
     </div>
   );
 }
+
