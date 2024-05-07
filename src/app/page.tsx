@@ -7,10 +7,12 @@ export default function Home() {
   const [gender, setGender] = useState('');
   const [country, setCountry] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const [ageResponse, genderResponse, nationalResponse] = await Promise.all([
@@ -19,12 +21,17 @@ export default function Home() {
         fetch(`https://api.nationalize.io?name=${name}`).then((response) => response.json()),
       ]);
 
-      setAge(ageResponse.age);
-      setGender(genderResponse.gender);
-      const countryInfo = nationalResponse.country[0];
-      setCountry(countryInfo.country_id);
+      setAge(ageResponse?.age || 'Not found');
+      setGender(genderResponse?.gender || 'Not found');
+      if (nationalResponse?.country) {
+        const countryInfo = nationalResponse.country[0];
+        setCountry(countryInfo.country_id);
+      } else {
+        setCountry('Not found');
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
+      setError('Error fetching data. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -44,20 +51,23 @@ export default function Home() {
               className="block w-full border border-gray-300 rounded-md p-2"
             />
           </label>
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md w-full hover:bg-blue-600">
-            Submit
+          <button
+            type="submit"
+            disabled={loading}
+            className={`bg-blue-500 text-white px-4 py-2 rounded-md w-full hover:bg-blue-600 ${
+              loading && 'opacity-50 cursor-not-allowed'
+            }`}
+          >
+            {loading ? 'Submitting...' : 'Submit'}
           </button>
         </form>
-        {loading ? (
-          <p className="text-center">Loading...</p>
-        ) : (
-          age && (
-            <div className="bg-gray-100 p-4 rounded-b-md">
-              <p className="mb-2">Age: {age}</p>
-              <p className="mb-2">Gender: {gender}</p>
-              <p>Country: {country}</p>
-            </div>
-          )
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        {age && (
+          <div className="bg-gray-100 p-4 rounded-b-md">
+            <p className="mb-2">Age: {age}</p>
+            <p className="mb-2">Gender: {gender}</p>
+            <p>Country: {country}</p>
+          </div>
         )}
       </div>
     </div>
